@@ -1,0 +1,20 @@
+MedIntake - Run Instructions
+
+Follow these simple steps to start the MedIntake application locally on your Windows machine:
+
+1. Open PowerShell or Command Prompt.
+2. Navigate to your project folder (if you aren't already there):
+   cd "c:\Users\admin\OneDrive\Desktop\Jovac Hackathon Team 12\MedTalk Project"
+
+3. Make sure the required Python packages are installed:
+   pip install Flask python-dotenv google-genai
+
+4. Run the Python server:
+   python app.py
+
+5. Once the server is running, open your web browser and go to:
+   http://127.0.0.1:5000/
+
+Note: To stop the server at any time, go back to your terminal window and press Ctrl + C.
+
+Staff Login PIN: 1234
