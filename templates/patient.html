@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedIntake | Patient Portal</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { slate: { 50: '#F8FAFC', 900: '#0F172A' } } } }
+        }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-white/90 backdrop-blur-xl border-b border-slate-200/50 px-8 py-4 flex justify-between items-center z-50 relative">
+        <div class="flex items-center gap-4">
+            <div class="bg-gradient-to-b from-white to-slate-50 text-blue-600 p-2.5 rounded-[14px] border border-slate-200/60 premium-shadow">
+                <i data-lucide="hospital" class="w-6 h-6"></i>
+            </div>
+            <h1 class="text-[22px] font-bold tracking-tight text-slate-900 drop-shadow-sm">Patient Portal</h1>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <a href="/" class="text-sm font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg transition-all duration-300">Return to Home</a>
+        </div>
+    </header>
+
+    <main class="flex-1 relative overflow-hidden flex bg-white">
+        
+        <!-- Column A: Digital Intake Form -->
+        <div class="w-1/2 h-full p-10 overflow-y-auto custom-scrollbar border-r border-slate-200/50 relative bg-slate-50/50">
+            <!-- Subtle background accent -->
+            <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50 to-transparent pointer-events-none"></div>
+
+            <div class="max-w-xl mx-auto relative z-10">
+                <div class="mb-10 text-center">
+                    <h2 class="text-[32px] font-extrabold mb-3 tracking-tight text-slate-900">Digital Intake</h2>
+                    <p class="text-slate-500 font-medium">Please provide your details for today's visit securely below.</p>
+                </div>
+                
+                <div class="w-full bg-white rounded-[24px] premium-shadow border border-slate-200/60 overflow-hidden" style="height: 650px;">
+                    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSeF0OBmVDA98J8gq-k8Y8iRnnNQt4p2ulhBvICrgCR7iQ8cHA/viewform?embedded=true" width="100%" height="100%" frameborder="0" marginheight="0" marginwidth="0" class="custom-scrollbar">Loading…</iframe>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Column B: Live Status Lookup -->
+        <div class="w-1/2 h-full bg-gradient-to-br from-slate-50 via-white to-blue-50/30 p-10 flex flex-col items-center justify-center relative overflow-y-auto custom-scrollbar">
+            
+            <div class="max-w-md w-full relative z-10 bg-white border border-slate-200/60 p-10 rounded-[24px] my-auto shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] hover:border-blue-200 transition-all duration-300 transform hover:-translate-y-2 hover:scale-[1.02] group overflow-hidden">
+                <!-- Colorful top accent line -->
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+                
+                <div class="text-center mb-8">
+                    <div class="mx-auto w-14 h-14 bg-blue-50 rounded-[16px] flex items-center justify-center mb-5 border border-blue-100 text-blue-600 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all duration-500">
+                        <i data-lucide="activity" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-[26px] font-bold text-slate-900 tracking-tight">Check Your Status</h3>
+                    <p class="text-slate-500 font-medium mt-1">Enter your details to track your visit progress.</p>
+                </div>
+                
+                <form id="status-form" class="space-y-5">
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                            <i data-lucide="mail" class="w-5 h-5"></i>
+                        </div>
+                        <input type="email" id="lookup-email" required placeholder="Email Address" class="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-[12px] focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm bg-white text-slate-900 font-medium placeholder:text-slate-400">
+                    </div>
+
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                            <i data-lucide="calendar" class="w-5 h-5"></i>
+                        </div>
+                        <input type="date" id="lookup-dob" required class="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-[12px] focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm bg-white text-slate-600 font-medium">
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3.5 rounded-[12px] hover:from-blue-500 hover:to-indigo-500 transition-all duration-300 shadow-[0_0_15px_rgba(79,70,229,0.2)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] transform active:scale-[0.98] flex justify-center items-center gap-2 group/btn relative overflow-hidden">
+                        <span class="relative z-10 flex items-center gap-2">
+                            Track Status
+                            <i data-lucide="arrow-right" class="w-5 h-5 group-hover/btn:translate-x-1 transition-transform"></i>
+                        </span>
+                    </button>
+                </form>
+                
+                <div id="status-widget" class="mt-8 hidden border-t border-slate-200/50 pt-6">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='patient.js') }}"></script>
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

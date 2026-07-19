@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedIntake | Clinician Hub</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { slate: { 50: '#F8FAFC', 900: '#0F172A' } } } }
+        }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-slate-900 text-slate-900 font-sans h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-slate-900 border-b border-slate-800/60 px-8 py-4 flex justify-between items-center z-50 relative">
+        <div class="flex items-center gap-4">
+            <div class="bg-slate-800 text-emerald-400 p-2.5 rounded-[14px] border border-slate-700 premium-shadow">
+                <i data-lucide="stethoscope" class="w-6 h-6"></i>
+            </div>
+            <h1 class="text-[22px] font-bold tracking-tight text-white drop-shadow-sm">Clinician Triage Hub</h1>
+        </div>
+        
+        <div class="flex items-center gap-5">
+            <a href="/logout" onclick="exitPortal(event, '/logout')" class="text-sm font-semibold text-slate-400 hover:text-white transition-colors">Log Out</a>
+            <div class="w-10 h-10 rounded-[12px] bg-gradient-to-b from-slate-700 to-slate-800 border border-slate-600 premium-shadow flex items-center justify-center text-sm font-bold text-slate-200">
+                Dr
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 relative overflow-hidden flex bg-slate-50/50">
+        <!-- Left Pane: Validated Queue -->
+        <div class="w-[65%] h-full p-8 overflow-y-auto custom-scrollbar relative">
+            <div class="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 pointer-events-none"></div>
+            
+            <div class="flex justify-between items-center mb-8 relative z-10">
+                <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Active Clinical Queue</h2>
+                <div id="validated-badge" class="bg-white text-slate-600 px-4 py-1.5 rounded-[12px] text-sm font-bold premium-shadow border border-slate-200/60">Loading...</div>
+            </div>
+            
+            <div id="validated-queue" class="grid grid-cols-1 xl:grid-cols-2 gap-6 relative z-10">
+                <!-- Injected via JS -->
+                <p class="text-slate-400 col-span-full py-16 text-center flex flex-col items-center font-medium">
+                    <i data-lucide="loader-2" class="w-8 h-8 text-blue-500 mb-4 animate-spin"></i>
+                    Syncing live data...
+                </p>
+            </div>
+        </div>
+        <!-- Right Pane: Needs Nurse Review -->
+        <div class="w-[35%] h-full bg-slate-900 border-l border-slate-800/60 p-8 overflow-y-auto custom-scrollbar relative">
+            
+            <div class="flex justify-between items-center mb-8 pb-4 relative z-10">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                    <i data-lucide="alert-circle" class="w-6 h-6 text-amber-500"></i>
+                    Needs Nurse Review
+                </h2>
+            </div>
+            
+            <div id="nurse-queue" class="space-y-5 relative z-10">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Brief Document Modal (Hidden by default) -->
+    <div id="brief-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+        <div id="modal-content-container" class="bg-white rounded-[24px] premium-shadow w-[800px] h-[80vh] flex flex-col transform scale-95 transition-transform duration-300 overflow-hidden border border-slate-200/60">
+            <div class="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>
+                    Clinical Brief Document
+                </h3>
+                <button id="close-modal" class="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-full hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex-1 p-6 bg-slate-50/20 overflow-y-auto">
+                <div class="mt-4 text-center">
+                    <a id="brief-doc-link" href="#" target="_blank" class="inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                        Open Google Doc
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script exclusively for Doctor Portal -->
+    <script src="{{ url_for('static', filename='doctor.js') }}"></script>
+    
+    <!-- Transition Overlay -->
+    <div id="transition-overlay" class="fixed inset-0 z-[100] bg-slate-900 transform translate-y-full transition-transform duration-500 ease-in-out pointer-events-none"></div>
+
+    <!-- Initialize Lucide Icons & Logic -->
+    <script>
+        lucide.createIcons();
+        
+        function exitPortal(event, url) {
+            event.preventDefault();
+            const overlay = document.getElementById('transition-overlay');
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                overlay.classList.remove('translate-y-full');
+                overlay.classList.add('translate-y-0');
+            });
+            
+            // Navigate after transition finishes
+            setTimeout(() => {
+                window.location.href = url;
+            }, 500);
+        }
+    </script>
+</body>
+</html>
