@@ -1,0 +1,790 @@
+{
+  "name": "MedIntake — Clinical Pre-Visit Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1gK8zgjTrqfusdqdJMyc4AQHSNWtvHjnNdMcJw27jG7Q",
+          "mode": "list",
+          "cachedResultName": "MedIntake_Master_Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gK8zgjTrqfusdqdJMyc4AQHSNWtvHjnNdMcJw27jG7Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1913049346,
+          "mode": "list",
+          "cachedResultName": "Raw_Submissions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gK8zgjTrqfusdqdJMyc4AQHSNWtvHjnNdMcJw27jG7Q/edit#gid=1913049346"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "id": "fe6a304e-e476-4e89-af46-b65143b693cf",
+      "name": "MedIntake Form Submission",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        192
+      ],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "yLf0XpfZLwm2D272",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Patient Submission:\nFull Name: {{ $json['Patient Name  '] }}\nDate of Birth: {{ $json['Date of Birth'] }}\nEmail: {{ $json['  Email  '] }}\nReason for Visit: {{ $json['Reason for Visit  '] }}\nDescribe Symptoms: {{ $json['Describe Symptoms  '] }}\nCurrent Medicines: {{ $json['Current Medicines'] }}\nKnown Allergies: {{ $json['Known Allergies  '] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a strict clinical data parser. Analyze the incoming patient data. Output a strict JSON object with two top-level keys:\n1. 'extracted_data': containing chief_complaint, symptom_duration, severity ('Mild'|'Moderate'|'Severe'|'Unknown'), medications (array), and allergies (array).\n2. 'validation': containing 'status' ('Valid' or 'Needs Nurse Review') and 'review_reason' (string or null).\nCRITICAL: If the patient data has clear chronological contradictions (e.g., '3 weeks' vs 'started yesterday'), is missing critical context (e.g., complaining of severe dizziness but leaving medications blank), or is low-signal (e.g., 'I don't feel well' with no other data), set status to 'Needs Nurse Review' and explain why in 'review_reason'."
+        }
+      },
+      "id": "1124a0ae-eb66-4d6a-8fd3-63945782c335",
+      "name": "Extraction & Validation",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"extracted_data\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"chief_complaint\": { \"type\": \"string\" },\n        \"symptom_duration\": { \"type\": \"string\" },\n        \"severity\": { \"type\": \"string\", \"enum\": [\"Mild\", \"Moderate\", \"Severe\", \"Unknown\"] },\n        \"medications\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n        \"allergies\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n      },\n      \"required\": [\"chief_complaint\", \"symptom_duration\", \"severity\", \"medications\", \"allergies\"]\n    },\n    \"validation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"status\": { \"type\": \"string\", \"enum\": [\"Valid\", \"Needs Nurse Review\"] },\n        \"review_reason\": { \"type\": [\"string\", \"null\"] }\n      },\n      \"required\": [\"status\", \"review_reason\"]\n    }\n  },\n  \"required\": [\"extracted_data\", \"validation\"]\n}"
+      },
+      "id": "7d4a01b8-8baa-4c51-80fc-5a45081ae082",
+      "name": "Extraction Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "review-check",
+              "leftValue": "={{ $json.output.validation.status }}",
+              "rightValue": "Needs Nurse Review",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "813505d3-64e0-48c1-8566-b2f85a9c3de1",
+      "name": "Needs Nurse Review?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1g-O69TStA_xvePi2Pm0raXXD6v8da-RBo7agvm_4QpQ",
+          "mode": "list",
+          "cachedResultName": "Needs_Nurse_Review",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1g-O69TStA_xvePi2Pm0raXXD6v8da-RBo7agvm_4QpQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 393572476,
+          "mode": "list",
+          "cachedResultName": "Needs_Nurse_Review",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1g-O69TStA_xvePi2Pm0raXXD6v8da-RBo7agvm_4QpQ/edit#gid=393572476"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp ": "={{ $('MedIntake Form Submission').item.json.Timestamp }}",
+            "Full Name ": "={{ $('MedIntake Form Submission').item.json['Patient Name  '] }}",
+            "Raw Symptoms": "={{ $('MedIntake Form Submission').item.json['Reason for Visit  '] }}",
+            "Status": "={{ $('Extraction & Validation').item.json.output.validation.status }}",
+            "AI Triage Exception Reason ": "={{ $json.output.validation.review_reason }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp ",
+              "displayName": "Timestamp ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Full Name ",
+              "displayName": "Full Name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Raw Symptoms",
+              "displayName": "Raw Symptoms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Triage Exception Reason ",
+              "displayName": "AI Triage Exception Reason ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "20a257bc-0b26-4aa9-a44f-281f34b88aac",
+      "name": "Log to Nurse Review Queue",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        864,
+        0
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pL3jBWEyHkcxkJi4",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "singhmunaa246@gmail.com",
+        "subject": "=MedIntake: Nurse Review Needed — {{ $('MedIntake Form Submission').item.json['Full Name'] }}",
+        "message": "=<h3>Patient submission flagged for nurse review</h3><p><strong>Patient:</strong> {{ $('MedIntake Form Submission').item.json['Full Name'] }}<br><strong>DOB:</strong> {{ $('MedIntake Form Submission').item.json['Date of Birth'] }}<br><strong>Email:</strong> {{ $('MedIntake Form Submission').item.json['Email'] }}</p><p><strong>Reason flagged:</strong><br>{{ $json.output.validation.review_reason }}</p><p>This submission was not auto-triaged. Please review the intake queue.</p>",
+        "options": {}
+      },
+      "id": "ec86500f-6789-4ee3-9950-3133f7e3db42",
+      "name": "Alert Nurse Lead",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        192
+      ],
+      "webhookId": "8b83a23e-38bd-4794-bbbe-e6ac4bee1db7",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ZPXhvQHRcqInvW2t",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Classify this validated patient case. Extracted clinical data:\n{{ JSON.stringify($json.output.extracted_data) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a clinical triage classifier. Given clean extracted patient data, classify the case:\n- urgency: exactly one of 'Routine', 'Same-day', or 'Urgent'.\n- specialty: the most likely clinical department (e.g. Cardiology, Dermatology, General Medicine).\n- confidence_score: a float between 0.0 and 1.0 reflecting your certainty.\nReturn strict JSON only."
+        }
+      },
+      "id": "6366bc6a-a0a4-4758-b122-6b05ad9485df",
+      "name": "Triage & Categorization",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        800,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"urgency\":\"Same-day\",\"specialty\":\"Cardiology\",\"confidence_score\":0.82}"
+      },
+      "id": "f8b03b78-979e-4b23-b65b-273bf29e6962",
+      "name": "Triage Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        944,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Convert the following into high-density medical shorthand for a doctor to scan in 15 seconds.\nExtracted data: {{ JSON.stringify($(\"Extraction & Validation\").item.json.output.extracted_data) }}\nTriage: {{ JSON.stringify($(\"Triage & Categorization\").item.json.output) }}\nPatient DOB: {{ $('MedIntake Form Submission').item.json['Date of Birth'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a physician writing chart shorthand. Convert structured data into high-density medical shorthand using terms like c/o, h/o, x, y/o, R/O.\nReturn strict JSON with:\n- 'hpi': a compact History of Present Illness string.\n- 'meds_allergies': a compact meds + allergies summary.\n- 'recommended_workup': suggested next steps (e.g. 'Stat EKG prep')."
+        }
+      },
+      "id": "67791a39-43dc-4e8a-a686-bf729e38262c",
+      "name": "Clinical Shorthand Generator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1152,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"hpi\":\"46 y/o F c/o chest tightness x3d, worse on exertion. h/o HTN.\",\"meds_allergies\":\"Meds: Lisinopril 10mg qd. Allergies: PCN.\",\"recommended_workup\":\"Stat EKG prep; troponin; R/O ACS\"}"
+      },
+      "id": "77154ae3-d917-41af-9f33-3e9aa543c31e",
+      "name": "Shorthand Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1296,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "1pvb3o11i7D45fi7AiJv6z-DvpCMG0yWLI0gVqXI-Txw",
+          "mode": "list",
+          "cachedResultName": "MedIntake Clinical Brief Template",
+          "cachedResultUrl": "https://docs.google.com/document/d/1pvb3o11i7D45fi7AiJv6z-DvpCMG0yWLI0gVqXI-Txw/edit?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "id": "b80d2f23-523f-4bbc-9b0f-0a1a86e3761f",
+      "name": "Copy Brief Template",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1504,
+        496
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ivUVu5uCfYj70o8y",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "=MEDINTAKE CLINICAL BRIEF\n\npatient_name {{ $('MedIntake Form Submission').item.json['Patient Name  '] }}"
+            },
+            {
+              "action": "insert",
+              "text": "=\nurgency_tier {{ $('MedIntake Form Submission').item.json['Triage Urgency'] }}"
+            },
+            {
+              "action": "insert",
+              "text": "=\nassigned_specialty {{ $('MedIntake Form Submission').item.json['Assigned Specialty']}}"
+            },
+            {
+              "action": "insert",
+              "text": "=\nclinical_brief  \nHPI: {{ $('Clinical Shorthand Generator').item.json.output.hpi }}\nMeds: {{ $('Clinical Shorthand Generator').item.json.output.meds_allergies }}\nPlan:{{ $('Clinical Shorthand Generator').item.json.output.recommended_workup }}"
+            }
+          ]
+        }
+      },
+      "id": "3a4ce85c-2f0a-4105-bb96-5ef26c05e44c",
+      "name": "Generate Clinical Brief",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        496
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "1Hy30GHt17bQkh24",
+          "name": "Google Docs account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1gK8zgjTrqfusdqdJMyc4AQHSNWtvHjnNdMcJw27jG7Q",
+          "mode": "list",
+          "cachedResultName": "MedIntake_Master_Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gK8zgjTrqfusdqdJMyc4AQHSNWtvHjnNdMcJw27jG7Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Today's Validated Patients"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "Patient Name": "={{ $('MedIntake Form Submission').item.json['Patient Name  '] }}",
+            "Date of Birth": "={{ $('MedIntake Form Submission').item.json['Date of Birth'] }}",
+            "Email": "={{ $('MedIntake Form Submission').item.json['  Email  '] }}",
+            "Chief Complaint": "={{ $('Extraction & Validation').item.json.output.extracted_data.chief_complaint }}",
+            "Urgency": "={{ $('Triage & Categorization').item.json.output.urgency }}",
+            "Confidence Score": "={{ $('Triage & Categorization').item.json.output.confidence_score }}",
+            "Brief Doc URL": "=https://docs.google.com/document/d/{{ $('Copy Brief Template').item.json.id }}/edit",
+            "Speciality": "={{ $('Triage & Categorization').item.json.output.specialty }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Patient Name",
+              "displayName": "Patient Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date of Birth",
+              "displayName": "Date of Birth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Chief Complaint",
+              "displayName": "Chief Complaint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Urgency",
+              "displayName": "Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Speciality",
+              "displayName": "Speciality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Confidence Score",
+              "displayName": "Confidence Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Brief Doc URL",
+              "displayName": "Brief Doc URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "13fc2524-60e9-4986-86b1-58a35c753f67",
+      "name": "Sync to Validated Patients",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1952,
+        496
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pL3jBWEyHkcxkJi4",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('MedIntake Form Submission').item.json['  Email  '] }}",
+        "subject": "=Your appointment request has been received — {{ $('Triage & Categorization').item.json.output.specialty }}",
+        "message": "=<p>Dear {{ $('MedIntake Form Submission').item.json['Patient Name  '] }},</p>\n\n<p>Thank you for completing your pre-visit intake. Our clinical team has reviewed your submission and routed you to our <strong>{{ $('Triage & Categorization').item.json.output.specialty }}</strong> team (priority: <strong>{{ $('Triage & Categorization').item.json.output.urgency }}</strong>).</p><p><strong>Preparation instructions:</strong><br>{{ ($('Extraction & Validation').item.json.output.extracted_data.chief_complaint + ' ' + $('MedIntake Form Submission').item.json['Reason for Visit']).toLowerCase().includes('blood') || ($('Extraction & Validation').item.json.output.extracted_data.chief_complaint + ' ' + $('MedIntake Form Submission').item.json['Reason for Visit']).toLowerCase().includes('fast') ? 'Your visit may involve fasting blood work. Please do not eat or drink anything except water after midnight the night before your appointment.' : 'Please arrive 15 minutes before your scheduled time and bring a photo ID, your insurance card, and a current list of your medications.' }}</p>\n\n<p>We look forward to seeing you.</p>\n\n<p>— The MedIntake Clinical Team</p>",
+        "options": {}
+      },
+      "id": "6eb41d71-dfd7-45f8-8372-9135441cdf10",
+      "name": "Send Patient Confirmation",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2176,
+        496
+      ],
+      "webhookId": "6ef31f61-2cef-4687-adef-f0d5da0228c3",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ZPXhvQHRcqInvW2t",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "ef2dab37-19e0-4ef8-9c8f-284ec73f04ca",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        384
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "b5148f8a-5bfb-4d1a-a471-739a9a93c5ff",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        688
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "e8306e3b-9d9d-468d-aece-703749b73c6c",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        688
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "MedIntake Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Extraction & Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraction & Validation": {
+      "main": [
+        [
+          {
+            "node": "Needs Nurse Review?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraction Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extraction & Validation",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Nurse Review?": {
+      "main": [
+        [
+          {
+            "node": "Log to Nurse Review Queue",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Alert Nurse Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Triage & Categorization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triage & Categorization": {
+      "main": [
+        [
+          {
+            "node": "Clinical Shorthand Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triage Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Triage & Categorization",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clinical Shorthand Generator": {
+      "main": [
+        [
+          {
+            "node": "Copy Brief Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shorthand Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Clinical Shorthand Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy Brief Template": {
+      "main": [
+        [
+          {
+            "node": "Generate Clinical Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Clinical Brief": {
+      "main": [
+        [
+          {
+            "node": "Sync to Validated Patients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync to Validated Patients": {
+      "main": [
+        [
+          {
+            "node": "Send Patient Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extraction & Validation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Triage & Categorization",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clinical Shorthand Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a412bbb2-1ea1-4688-9781-1a66c27c9e0b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "acf8f470344f444880456bad4021105352e1853ecd91535b9b88c6455e9d68a0"
+  },
+  "nodeGroups": [],
+  "id": "4aDWs2UUL2uYsA46",
+  "tags": []
+}
