@@ -1,5 +1,5 @@
 const statusForm = document.getElementById('status-form');
-const statusWidget = document.getElementById('status-widget');
+const statusWidget = document.getElementById('status-widget'); 
 
 statusForm.addEventListener('submit', async (e) => {
     e.preventDefault();
