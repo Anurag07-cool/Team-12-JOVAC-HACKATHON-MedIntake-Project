@@ -1,0 +1,137 @@
+/* Custom CSS for micro-interactions and refinements */
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* Animations */
+@keyframes smooth-appear {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card-enter {
+    animation: smooth-appear 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+}
+
+/* Premium Shadows and Depth */
+.premium-shadow {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.premium-shadow-hover {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.premium-shadow-hover:hover {
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.1), 0 4px 10px -8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.dark-glass-panel {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Nav Button Active State */
+.nav-btn {
+    position: relative;
+    color: #64748B; /* slate-500 */
+}
+
+.nav-btn.active {
+    color: #0F172A; /* slate-900 */
+    background-color: white;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Status Tracker Dots */
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    position: relative;
+    z-index: 10;
+}
+
+.status-dot-active {
+    background-color: #2563EB; /* blue-600 */
+    box-shadow: 0 0 0 4px #DBEAFE; /* blue-100 */
+}
+
+.status-dot-pending {
+    background-color: #CBD5E1; /* slate-300 */
+}
+
+.status-dot-warning {
+    background-color: #F59E0B; /* amber-500 */
+    box-shadow: 0 0 0 4px #FEF3C7; /* amber-100 */
+}
+
+.status-dot-success {
+    background-color: #10B981; /* emerald-500 */
+    box-shadow: 0 0 0 4px #D1FAE5; /* emerald-100 */
+}
+
+.status-line {
+    position: absolute;
+    left: 6px;
+    top: 12px;
+    bottom: -24px;
+    width: 2px;
+    background-color: #E2E8F0; /* slate-200 */
+    z-index: 0;
+}
+
+.status-line:last-child {
+    display: none;
+}
+
+/* Glowing tag animations */
+@keyframes soft-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.animate-soft-pulse {
+    animation: soft-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth Card Entrance */
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card-enter {
+    animation: slide-up 0.4s ease-out forwards;
+}
